@@ -1,24 +1,24 @@
 class EventEmitter {
 
     allowedEvents = [];
-    
+
     eventRegistry = new Map();
 
     onEventRegistry(eventName, callback) {
-        if(typeof(eventName) !== "string") {
+        if (typeof (eventName) !== "string") {
             console.warn("Event must be of type string");
             return;
         }
-        if(!this.allowedEvents.find((allowedEvent) => allowedEvent === eventName)) {
+        if (!this.allowedEvents.find((allowedEvent) => allowedEvent === eventName)) {
             console.warn(`${eventName.toString()} is not a valid event.`);
             return;
         }
-        if(typeof(callback) !== "function") {
+        if (typeof (callback) !== "function") {
             console.warn(`invalid callback function.`);
             return;
         }
 
-        if(!this.eventRegistry.has(eventName)) {
+        if (!this.eventRegistry.has(eventName)) {
             this.eventRegistry.set(eventName, [callback]);
         }
         this.eventRegistry.get(eventName).push(callback);
@@ -27,7 +27,7 @@ class EventEmitter {
     notifyAll(eventName, ...args) {
         const eventCallbacksExist = this.eventRegistry.has(eventName);
 
-        if(!eventCallbacksExist) {
+        if (!eventCallbacksExist) {
             return;
         }
 

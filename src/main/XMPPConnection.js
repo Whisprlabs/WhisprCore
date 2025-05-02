@@ -1,7 +1,9 @@
 import { client, xml } from "@xmpp/client"
 import id from "@xmpp/id";
 import debug from "@xmpp/debug"
+import jid from "@xmpp/jid";
 import { EventEmitter } from "./AbstractEventEmitter.js"
+
 
 class XmppConnectionConfig {
     constructor({ service, domain, resource, username, password }) {
@@ -51,7 +53,7 @@ class XmppConnectionConfigBuilder {
         this.password = password;
         return this;
     }
-    
+
     enableDebug() {
         this.debug = true;
         return this;
@@ -59,7 +61,7 @@ class XmppConnectionConfigBuilder {
 
     validate() {
         let error = 0;
-    
+
         if (!this.service) {
             error++;
             console.error("A service must be provided.");
@@ -77,20 +79,20 @@ class XmppConnectionConfigBuilder {
             console.error("A password must be provided.");
         }
 
-        if(!this.resource) {
+        if (!this.resource) {
             this.resource = id();
         }
-    
+
         return error === 0;
     }
-    
+
 
     build() {
-        if(!this.validate()) {
+        if (!this.validate()) {
             return undefined;
         }
 
-        return new XmppConnectionConfig ({
+        return new XmppConnectionConfig({
             service: this.service,
             domain: this.domain,
             resource: this.resource,
@@ -117,8 +119,9 @@ class XmppConnection extends EventEmitter {
             "disconnecting",
             "disconnect"
         ];
+        this.managerMap = new Map();
 
-        if(!(connectionConfig instanceof XmppConnectionConfig)) {
+        if (!(connectionConfig instanceof XmppConnectionConfig)) {
             throw new Error("Only XmppConnectionConfig can be supplied to XmppConnection.");
         }
 
@@ -131,6 +134,25 @@ class XmppConnection extends EventEmitter {
         });
 
         debug(this.connection, connectionConfig.debug);
+        this.entityFullJID = jid(connectionConfig.username, connectionConfig.domain, connectionConfig.resource);
+    }
+
+    getClientConnectionJid() {
+        return this.entityFullJID;
+    }
+
+    getInstanceForManager(managerClass) {
+        const isManagerCreated = this.managerMap.has(managerClass);
+        if (isManagerCreated) {
+            return this.managerMap.get(managerClass);
+        }
+        const newManagerInstance = new managerClass(this);
+        this.managerMap.set(managerClass.name, newManagerInstance);
+        return newManagerInstance;
+    }
+
+    async send(stanza) {
+        await this.connection.send(stanza);
     }
 
     async start() {
@@ -139,7 +161,7 @@ class XmppConnection extends EventEmitter {
             this.notifyAll('stanza', message);
         })
         await this.connection.start();
-        await this.connection.send(xml("presence"));
+        await this.send(xml("presence"));
     }
 
 }
