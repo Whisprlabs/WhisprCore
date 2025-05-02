@@ -5,6 +5,7 @@ class MultiUserChatManager {
 
     constructor(connection) {
         this.connection = connection;
+        this.clientJID = this.connection.getClientConnectionJid();
         this.messageQueue = new Map();
         this.connection.onEventRegistry("stanza", (message) => {
             if (message.is('iq')) {
@@ -27,9 +28,8 @@ class MultiUserChatManager {
 
     }
 
-    async getMUCServiceDomains() {
-        const clientJID = this.connection.getClientConnectionJid();
-        const message = XmppStanza.MUCDiscover(clientJID.getDomain(), clientJID.getLocal())
+    async _discoItems(jid = this.clientJID.getDomain()) {
+        const message = XmppStanza.MUCDiscover(jid, this.clientJID.toString())
 
         let result = await new Promise(async (resolve, reject) => {
             await this.connection.send(message.stanza);
@@ -37,7 +37,11 @@ class MultiUserChatManager {
             setTimeout(resolve, 5000);
         });
 
-        const domains = result.getChild("query").getChildren("item").map((item) => {
+        let domains = result.getChild("query")?.getChildren("item");
+        if (!domains) {
+            return [];
+        }
+        return domains.map((item) => {
             return (
                 {
                     jid: item.attrs.jid,
@@ -45,7 +49,14 @@ class MultiUserChatManager {
                 }
             )
         });
-        return domains;
+    }
+
+    async getRooms(jid) {
+        return await this._discoItems(jid);
+    }
+
+    async getDomainServices() {
+        return await this._discoItems();
     }
 
 
