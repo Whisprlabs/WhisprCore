@@ -1,5 +1,8 @@
+// @ts-check
+
 import { XmppConnection } from "./XMPPConnection.js"
 import { XmppStanza } from "./XmppStanzaBuilder.js"
+import { stanzaParser } from "./XmppStanzaParser.js";
 
 class MultiUserChatManager {
     /**
@@ -22,7 +25,7 @@ class MultiUserChatManager {
                 const messageId = message.attrs.id;
                 if (this.messageQueue.has(messageId)) {
                     const stanzaFromId = this.messageQueue.get(messageId);
-                    stanzaFromId.resolve(message)
+                    stanzaFromId?.resolve(message)
                     this.messageQueue.delete(messageId);
                 }
             }
@@ -44,7 +47,7 @@ class MultiUserChatManager {
     /**
      * Disco item discovery, should only be called internally.
      * @param {string} jid 
-     * @returns {Promise<Array<{jid: string, name: string}>>}
+     * @returns {Promise<XMLElement>}
      */
     async _discoItems(jid) {
         const message = XmppStanza.DiscoItemDiscovery(jid, this.connection.getClientConnectionJid())
@@ -56,20 +59,7 @@ class MultiUserChatManager {
             this.messageQueue.set(message.stanzaId, { resolve, reject });
             setTimeout(resolve, 5000);
         });
-
-        let domains = result.getChild("query")?.getChildren("item");
-        if (!domains) {
-            return [];
-        }
-
-        return domains.map((/** @type {XMLElement}*/ item) => {
-            return (
-                {
-                    jid: item.attrs.jid,
-                    name: item.attrs.name
-                }
-            )
-        });
+        return result;
     }
     /**
      * Get all rooms associated with the specified JID.
@@ -77,17 +67,31 @@ class MultiUserChatManager {
      * @returns {Promise<Array<{jid: string, name?: string}>>}
      */
     async getRooms(jid) {
-        return this._discoItems(jid);
+        const result = await this._discoItems(jid);
+        return stanzaParser.extractItems(result);
+
     }
     /**
      * Get all domain services available from the Domain server.
      * @returns {Promise<Array<{jid: string, name?: string}>>}
      */
     async getDomainServices() {
-        return this._discoItems(this.connection.getClientConnectionJid().domain);
+        const jid = this.connection?.getClientConnectionJid()?.domain
+        const result = await this._discoItems(jid !== undefined ? jid : "");
+        return stanzaParser.extractItems(result);
     }
+    /**
+     * Discover all hosted items on the domain.
+     * @returns {Promise<Array<{jid: string, name?: string}>>}
+     */
+    async discoverHostedItems() {
+        const result = await this.getDomainServices();
 
-
+        const hostedItems = await Promise.all(result.map(async (discoItem) => {
+            return await this.getRooms(discoItem.jid);
+        }))
+        return hostedItems.flat();
+    }
 }
 
 export { MultiUserChatManager }

@@ -1,3 +1,4 @@
+// @ts-check
 import { client, xml } from "@xmpp/client"
 import id from "@xmpp/id";
 import debug from "@xmpp/debug"
@@ -83,33 +84,27 @@ class XmppConnectionConfigBuilder {
     }
     /**
      * Checks for configuration error.
-     * @returns {Boolean}
+     * @returns {void}
      */
     validate() {
-        let error = 0;
 
         if (!this.service) {
-            error++;
-            console.error("A service must be provided.");
+            throw new Error("A service must be provided.")
         }
         if (!this.domain) {
-            error++;
-            console.error("A domain must be provided.");
+            throw new Error("A domain must be provided.")
         }
         if (!this.username) {
-            error++;
-            console.error("A username must be provided.");
+            throw new Error("A username must be provided.")
         }
         if (!this.password) {
-            error++;
-            console.error("A password must be provided.");
+            throw new Error("A password must be provided.")
         }
 
         if (!this.resource) {
             this.resource = id();
         }
 
-        return error === 0;
     }
 
     /**
@@ -117,10 +112,7 @@ class XmppConnectionConfigBuilder {
      * @returns {XmppConnectionConfig}
      */
     build() {
-        if (!this.validate()) {
-            return undefined;
-        }
-
+        this.validate()
         return new XmppConnectionConfig({
             service: this.service,
             domain: this.domain,
@@ -180,7 +172,7 @@ class XmppConnection extends EventEmitter {
     }
     /**
      * Return the Client JID.
-     * @returns {JID}
+     * @returns {JID | undefined}
      */
     getClientConnectionJid() {
         return this.entityFullJID;
