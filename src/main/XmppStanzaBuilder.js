@@ -24,6 +24,27 @@ class XmppStanza {
         return { stanzaId, stanza };
     }
 
+        /**
+     * Create a Disco item discovery stanza
+     * @param {string} to 
+     * @param {JID | undefined} from 
+     * @returns {{ stanzaId: string, stanza: XMLElement }}
+     */
+        static DiscoItemInfo(to, from) {
+            const stanzaId = id();
+            const stanza = xml(
+                'iq',
+                {
+                    from: from,
+                    to: to,
+                    id: stanzaId,
+                    type: 'get'
+                },
+                xml('query', { xmlns: 'http://jabber.org/protocol/disco#info' })
+            );
+            return { stanzaId, stanza };
+        }
+
 }
 
 export { XmppStanza }

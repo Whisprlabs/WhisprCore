@@ -20,6 +20,22 @@ class stanzaParser {
             )
         });
     }
+
+    /**
+     * 
+     * @param {XMLElement} stanza 
+     * @returns {boolean}
+     */
+    static isMuc(stanza) {
+        const stanzaFeatures = stanza?.getChild('query')?.getChildren('feature');
+        if(!stanzaFeatures) {
+            return false;
+        }
+        const mucFeature = stanzaFeatures.filter((element) => {
+            return element.attrs.var.endsWith('muc')
+        });
+        return mucFeature.length !== 0;
+    }
 }
 
 export { stanzaParser }
