@@ -2,12 +2,22 @@ import { XmppConnection } from "./XMPPConnection.js"
 import { XmppStanza } from "./XmppStanzaBuilder.js"
 
 class MultiUserChatManager {
-
+    /**
+     * 
+     * @param {XmppConnection} connection 
+     */
     constructor(connection) {
+        /**
+         * @type {XmppConnection}
+         */
         this.connection = connection;
         this.clientJID = this.connection.getClientConnectionJid();
+
+        /**
+         * @type {Map<string, { resolve: (value: XMLElement) => void, reject: (reason?: any) => void }>}
+         */
         this.messageQueue = new Map();
-        this.connection.onEventRegistry("stanza", (message) => {
+        this.connection.onEventRegistry("stanza", (/** @type {XMLElement} */message) => {
             if (message.is('iq')) {
                 const messageId = message.attrs.id;
                 if (this.messageQueue.has(messageId)) {
@@ -18,19 +28,29 @@ class MultiUserChatManager {
             }
         })
     }
-
+    /**
+     * Get the MultiUserChatManager for the connection.
+     * @param {XmppConnection} connection 
+     * @returns {MultiUserChatManager}
+     */
     static getInstanceFor(connection) {
         if (!(connection instanceof XmppConnection)) {
-            console.warn("Argument of MultiUserManager getInstanceFor must be of type XmppConnection");
-            return undefined;
+            throw new Error("Argument of MultiUserManager getInstanceFor must be of type XmppConnection");
         }
         return connection.getInstanceForManager(this);
 
     }
 
-    async _discoItems(jid = this.clientJID.getDomain()) {
-        const message = XmppStanza.MUCDiscover(jid, this.clientJID.toString())
-
+    /**
+     * Disco item discovery, should only be called internally.
+     * @param {string} jid 
+     * @returns {Promise<Array<{jid: string, name: string}>>}
+     */
+    async _discoItems(jid) {
+        const message = XmppStanza.DiscoItemDiscovery(jid, this.connection.getClientConnectionJid())
+        /**
+         * @type {XMLElement}
+         */
         let result = await new Promise(async (resolve, reject) => {
             await this.connection.send(message.stanza);
             this.messageQueue.set(message.stanzaId, { resolve, reject });
@@ -41,7 +61,8 @@ class MultiUserChatManager {
         if (!domains) {
             return [];
         }
-        return domains.map((item) => {
+
+        return domains.map((/** @type {XMLElement}*/ item) => {
             return (
                 {
                     jid: item.attrs.jid,
@@ -50,13 +71,20 @@ class MultiUserChatManager {
             )
         });
     }
-
+    /**
+     * Get all rooms associated with the specified JID.
+     * @param {string} jid 
+     * @returns {Promise<Array<{jid: string, name?: string}>>}
+     */
     async getRooms(jid) {
-        return await this._discoItems(jid);
+        return this._discoItems(jid);
     }
-
+    /**
+     * Get all domain services available from the Domain server.
+     * @returns {Promise<Array<{jid: string, name?: string}>>}
+     */
     async getDomainServices() {
-        return await this._discoItems();
+        return this._discoItems(this.connection.getClientConnectionJid().domain);
     }
 
 

@@ -1,9 +1,14 @@
 class EventEmitter {
-
+    /** @type {string[]} */
     allowedEvents = [];
-
+    /** @type {Map<string, Array<(...args: any[]) => void>>} */
     eventRegistry = new Map();
-
+    /**
+     * Register an a callback on an event name.
+     * @param {string} eventName 
+     * @param {(...args: any[]) => void} callback 
+     * @returns {void}
+     */
     onEventRegistry(eventName, callback) {
         if (typeof (eventName) !== "string") {
             console.warn("Event must be of type string");
@@ -23,7 +28,12 @@ class EventEmitter {
         }
         this.eventRegistry.get(eventName).push(callback);
     }
-
+    /**
+     * Notify all callbacks subscribing to an event.
+     * @param {string} eventName 
+     * @param  {...any} args 
+     * @returns {void}
+     */
     notifyAll(eventName, ...args) {
         const eventCallbacksExist = this.eventRegistry.has(eventName);
 

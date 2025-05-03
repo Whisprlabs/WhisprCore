@@ -1,17 +1,17 @@
 import { client, xml } from "@xmpp/client"
 import id from "@xmpp/id";
 import debug from "@xmpp/debug"
-import jid from "@xmpp/jid";
 import { EventEmitter } from "./AbstractEventEmitter.js"
-
+import { JID } from "@xmpp/jid";
 
 class XmppConnectionConfig {
-    constructor({ service, domain, resource, username, password }) {
+    constructor({ service, domain, resource, username, password, debug }) {
         this.service = service;
         this.domain = domain;
         this.resource = resource;
         this.username = username;
         this.password = password;
+        this.debug = debug;
     }
 
     static builder() {
@@ -28,37 +28,63 @@ class XmppConnectionConfigBuilder {
         this.password = null;
         this.debug = false;
     }
-
+    /**
+     *  (Required) Set the service.
+     * @param {string} service 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     setService(service) {
         this.service = service;
         return this;
     }
-
+    /**
+     * (Required) Set the domain.
+     * @param {string} domain 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     setDomain(domain) {
         this.domain = domain;
         return this;
     }
-
+    /**
+     * (Optional) Set the resource. Automatically set if none is provided.
+     * @param {string} resource 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     setResource(resource) {
         this.resource = resource;
         return this;
     }
-
+    /**
+     * (Required) Set the username.
+     * @param {string} username 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     setUsername(username) {
         this.username = username;
         return this;
     }
-
+    /**
+     * (Required) Set the password.
+     * @param {string} password 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     setPassword(password) {
         this.password = password;
         return this;
     }
-
+    /**
+     * (Optional) Enable debug output. Default is off.
+     * @returns {XmppConnectionConfigBuilder}
+     */
     enableDebug() {
         this.debug = true;
         return this;
     }
-
+    /**
+     * Checks for configuration error.
+     * @returns {Boolean}
+     */
     validate() {
         let error = 0;
 
@@ -86,7 +112,10 @@ class XmppConnectionConfigBuilder {
         return error === 0;
     }
 
-
+    /**
+     * Builds a new XmppConnectionConfig given the supplied configuration.
+     * @returns {XmppConnectionConfig}
+     */
     build() {
         if (!this.validate()) {
             return undefined;
@@ -98,13 +127,21 @@ class XmppConnectionConfigBuilder {
             resource: this.resource,
             username: this.username,
             password: this.password,
+            debug: this.debug,
         });
     }
 }
 
 class XmppConnection extends EventEmitter {
+    /**
+     * 
+     * @param {XmppConnectionConfig} connectionConfig 
+     */
     constructor(connectionConfig) {
         super();
+        /**
+         * @type { Array<string> }
+         */
         this.allowedEvents = [
             "error",
             "offline",
@@ -119,12 +156,18 @@ class XmppConnection extends EventEmitter {
             "disconnecting",
             "disconnect"
         ];
+        /** 
+         * @type {Map<any, any>}
+        */
         this.managerMap = new Map();
 
         if (!(connectionConfig instanceof XmppConnectionConfig)) {
             throw new Error("Only XmppConnectionConfig can be supplied to XmppConnection.");
         }
 
+        /**
+         * @type {import("@xmpp/client").Client}
+         */
         this.connection = client({
             service: connectionConfig.service,
             domain: connectionConfig.domain,
@@ -134,9 +177,11 @@ class XmppConnection extends EventEmitter {
         });
 
         debug(this.connection, connectionConfig.debug);
-        this.entityFullJID = jid(connectionConfig.username, connectionConfig.domain, connectionConfig.resource);
     }
-
+    /**
+     * Return the Client JID.
+     * @returns {JID}
+     */
     getClientConnectionJid() {
         return this.entityFullJID;
     }
@@ -147,20 +192,29 @@ class XmppConnection extends EventEmitter {
             return this.managerMap.get(managerClass);
         }
         const newManagerInstance = new managerClass(this);
-        this.managerMap.set(managerClass.name, newManagerInstance);
+        this.managerMap.set(managerClass, newManagerInstance);
         return newManagerInstance;
     }
-
+    /**
+     * Send a stanza to the domain.
+     * @param {XMLElement} stanza 
+     */
     async send(stanza) {
         await this.connection.send(stanza);
     }
-
+    /**
+     * Connect to the domain.
+     * @return {Promise<void>}
+     */
     async start() {
 
-        this.connection.on('stanza', (message) => {
+        this.connection.on('stanza', (/** @type{XMLElement}*/ message) => {
             this.notifyAll('stanza', message);
         })
-        await this.connection.start();
+        /**
+         * @type {JID}
+         */
+        this.entityFullJID = await this.connection.start();
         await this.send(xml("presence"));
     }
 
