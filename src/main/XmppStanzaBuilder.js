@@ -2,6 +2,12 @@
 import { xml } from "@xmpp/client";
 import id from "@xmpp/id";
 import { JID } from "@xmpp/jid";
+
+const messageType = Object.freeze({
+    GROUPCHAT: "groupchat",
+
+})
+
 class XmppStanza {
     /**
      * Create a Disco item discovery stanza
@@ -65,6 +71,29 @@ class XmppStanza {
         );
         return { stanzaId, stanza };
     }
+
+    /**
+     * 
+     * @param {string} from 
+     * @param {string} to 
+     * @param {string} type 
+     * @param {string} body 
+     * @return {XMLElement}
+     */
+    static createMessage(from, to, type, body) {
+
+        const stanza = xml(
+            'message',
+            {
+                from: from,
+                id: id(),
+                to: to,
+                type: type,
+            },
+            xml('body', {}, body)
+        );
+        return stanza;
+    }
 }
 
-export { XmppStanza }
+export { XmppStanza, messageType }

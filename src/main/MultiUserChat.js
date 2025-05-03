@@ -1,5 +1,5 @@
 import { MultiUserChatManager } from "./MultiUserChatManager.js";
-import { XmppStanza } from "./XmppStanzaBuilder.js";
+import { XmppStanza, messageType } from "./XmppStanzaBuilder.js";
 
 class MultiUserChat {
     /**
@@ -52,6 +52,12 @@ class MultiUserChat {
     async joinRoom() {
         const message = XmppStanza.JoinRoomStanza(this.jid, this.mucManager.getClientJID(), this.nickname);
         await this.mucManager.sendMessage(message.stanza);
+    }
+
+
+    async sendMessage(body) {
+        const message = XmppStanza.createMessage(this.mucManager.getClientJID(), this.jid, messageType.GROUPCHAT, body)
+        await this.mucManager.sendMessage(message);
     }
 
 }
