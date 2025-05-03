@@ -6,6 +6,15 @@ import { EventEmitter } from "./AbstractEventEmitter.js"
 import { JID } from "@xmpp/jid";
 
 class XmppConnectionConfig {
+    /**
+     * @param {Object} options
+     * @param {string} options.service
+     * @param {string} options.domain
+     * @param {string} options.resource
+     * @param {string} options.username
+     * @param {string} options.password
+     * @param {boolean} options.debug
+     */
     constructor({ service, domain, resource, username, password, debug }) {
         this.service = service;
         this.domain = domain;
@@ -15,6 +24,10 @@ class XmppConnectionConfig {
         this.debug = debug;
     }
 
+    /**
+     * 
+     * @returns {XmppConnectionConfigBuilder}
+     */
     static builder() {
         return new XmppConnectionConfigBuilder();
     }
@@ -22,11 +35,11 @@ class XmppConnectionConfig {
 
 class XmppConnectionConfigBuilder {
     constructor() {
-        this.service = null;
-        this.domain = null;
-        this.resource = null;
-        this.username = null;
-        this.password = null;
+        this.service = "";
+        this.domain = "";
+        this.resource = "";
+        this.username = "";
+        this.password = "";
         this.debug = false;
     }
     /**
@@ -132,7 +145,7 @@ class XmppConnection extends EventEmitter {
     constructor(connectionConfig) {
         super();
         /**
-         * @type { Array<string> }
+         * @type { string[] }
          */
         this.allowedEvents = [
             "error",
@@ -177,7 +190,11 @@ class XmppConnection extends EventEmitter {
     getClientConnectionJid() {
         return this.entityFullJID;
     }
-
+    /**
+     * 
+     * @param {any} managerClass 
+     * @returns {any}
+     */
     getInstanceForManager(managerClass) {
         const isManagerCreated = this.managerMap.has(managerClass);
         if (isManagerCreated) {
