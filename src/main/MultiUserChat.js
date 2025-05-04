@@ -1,5 +1,6 @@
 import { MultiUserChatManager } from "./MultiUserChatManager.js";
 import { XmppStanza, messageType } from "./XmppStanzaBuilder.js";
+import { stanzaParser } from "./XmppStanzaParser.js";
 
 class MultiUserChat {
     /**
@@ -28,6 +29,11 @@ class MultiUserChat {
          * @type {string}
          */
         this.nickname = nickname
+
+        /**
+         * @type {Map<string, { affiliation: string, role: string }>}
+         */
+        this.roomParticipants = new Map();
     }
 
     /**
@@ -39,7 +45,18 @@ class MultiUserChat {
             cb(message);
         });
 
-        /** TODO handle incoming messages */
+        if (message.is('presence')) {
+            const sender = message.attrs.from;
+            const userExists = this.roomParticipants.has(sender);
+            if (!userExists) {
+                const userData = stanzaParser.getRolesAndAffiliation(message)
+                this.roomParticipants.set(sender, userData);
+                //console.log([...this.roomParticipants?.entries()]);
+                //console.log("ran")
+            }
+
+            /** TODO STATUS CODE MUC PRESENCE STANZAS */
+        }
     }
     /**
      * 
@@ -58,6 +75,14 @@ class MultiUserChat {
     async sendMessage(body) {
         const message = XmppStanza.createMessage(this.mucManager.getClientJID(), this.jid, messageType.GROUPCHAT, body)
         await this.mucManager.sendMessage(message);
+    }
+
+    /**
+     * 
+     * @type {Map<string, { affiliation: string, role: string }>}
+     */
+    getroomParticipants() {
+        return this.roomParticipants;
     }
 
 }

@@ -28,13 +28,29 @@ class stanzaParser {
      */
     static isMuc(stanza) {
         const stanzaFeatures = stanza?.getChild('query')?.getChildren('feature');
-        if(!stanzaFeatures) {
+        if (!stanzaFeatures) {
             return false;
         }
         const mucFeature = stanzaFeatures.filter((element) => {
             return element.attrs.var.endsWith('muc')
         });
         return mucFeature.length !== 0;
+    }
+
+    /**
+     * 
+     * @param {XMLElement} message 
+     * @return {{ affiliation: string, role: string}}
+     */
+    static getRolesAndAffiliation(message) {
+        const userMetaData = message
+            ?.getChild('x', 'http://jabber.org/protocol/muc#user')
+            ?.getChild("item");
+        return {
+            affiliation: userMetaData?.attrs.affiliation || "",
+            role: userMetaData?.attrs.role || ""
+        };
+
     }
 }
 
