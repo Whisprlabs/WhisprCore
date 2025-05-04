@@ -8,6 +8,10 @@ const messageType = Object.freeze({
 
 })
 
+const presenceType = Object.freeze({
+    LEAVE_CHAT: 'unavailable',
+})
+
 class XmppStanza {
     /**
      * Create a Disco item discovery stanza
@@ -80,7 +84,7 @@ class XmppStanza {
      * @param {string} body 
      * @return {XMLElement}
      */
-    static createMessage(from, to, type, body) {
+    static createMessage(from, to, type, body="") {
 
         const stanza = xml(
             'message',
@@ -94,6 +98,25 @@ class XmppStanza {
         );
         return stanza;
     }
+
+    /**
+     * 
+     * @param {string} from 
+     * @param {string} to 
+     * @param {string} type 
+     * @return {XMLElement}
+     */
+    static createPresence(from, to, type) {
+        const stanza = xml(
+            'presence',
+            {
+                from: from,
+                to: to,
+                type: type
+            }
+        )
+        return stanza;
+    }
 }
 
-export { XmppStanza, messageType }
+export { XmppStanza, messageType, presenceType }

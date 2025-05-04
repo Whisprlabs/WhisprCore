@@ -1,5 +1,5 @@
 import { MultiUserChatManager } from "./MultiUserChatManager.js";
-import { XmppStanza, messageType } from "./XmppStanzaBuilder.js";
+import { XmppStanza, messageType, presenceType } from "./XmppStanzaBuilder.js";
 import { stanzaParser } from "./XmppStanzaParser.js";
 
 class MultiUserChat {
@@ -83,6 +83,11 @@ class MultiUserChat {
      */
     getroomParticipants() {
         return this.roomParticipants;
+    }
+
+    async leaveRoom() {
+        const message = XmppStanza.createPresence(this.mucManager.getClientJID(), this.jid, presenceType.LEAVE_CHAT);
+        await this.mucManager.sendMessage(message);
     }
 
 }
