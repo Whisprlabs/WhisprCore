@@ -51,8 +51,10 @@ class MultiUserChat {
             if (!userExists) {
                 const userData = stanzaParser.getRolesAndAffiliation(message)
                 this.roomParticipants.set(sender, userData);
-                //console.log([...this.roomParticipants?.entries()]);
-                //console.log("ran")
+            }
+            const getStanzaPresenceType = message.attrs.type
+            if (getStanzaPresenceType === 'unavailable') {
+                this.roomParticipants.delete(sender);
             }
 
             /** TODO STATUS CODE MUC PRESENCE STANZAS */
