@@ -47,6 +47,10 @@ class MultiUserChat {
 
         if (message.is('presence')) {
             const sender = message.attrs.from;
+            if (sender === `${this.jid}/${this.nickname}`) {
+                return;
+                /** Nothing to do for now but prevents adding ourselves to the participant list.*/
+            }
             const userExists = this.roomParticipants.has(sender);
             if (!userExists) {
                 const userData = stanzaParser.getRolesAndAffiliation(message)
