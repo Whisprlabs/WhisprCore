@@ -23,16 +23,17 @@ class stanzaParser {
 
     /**
      * 
-     * @param {XMLElement} stanza 
+     * @param {XMLElement} stanza
+     * @param {string} feature
      * @returns {boolean}
      */
-    static isMuc(stanza) {
+    static hasFeature(stanza, feature) {
         const stanzaFeatures = stanza?.getChild('query')?.getChildren('feature');
         if (!stanzaFeatures) {
             return false;
         }
         const mucFeature = stanzaFeatures.filter((element) => {
-            return element.attrs.var.endsWith('muc')
+            return element.attrs.var.endsWith(feature)
         });
         return mucFeature.length !== 0;
     }

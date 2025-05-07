@@ -137,17 +137,35 @@ class MultiUserChatManager {
     }
 
     /**
-     * Get all muc services.
+     * Query services based on a feature
+     * @param {string} feature 
      * @returns {Promise<string[]>}
      */
-    async getMucServices() {
+
+    async getServiceByFeature(feature) {
         const result = await this.getDomainServices();
 
         const hostedItems = await Promise.all(result.map(async (discoItem) => {
             const info = await this._discoInfo(discoItem.jid);
-            return stanzaParser.isMuc(info) === true ? discoItem.jid : "";
+            return stanzaParser.hasFeature(info, feature) === true ? discoItem.jid : "";
         }))
         return hostedItems.filter((jid) => jid.length > 0);
+    }
+
+    /**
+     * Get all muc services.
+     * @returns {Promise<string[]>}
+     */
+    async getMucServices() {
+        return this.getServiceByFeature('muc');
+    }
+
+    /**
+     * Get HTTP upload service.
+     * @returns {Promise<string[]>}
+     */
+    async getHTTPUploadService() {
+        return this.getServiceByFeature('urn:xmpp:http:upload:0');
     }
 
     /**
